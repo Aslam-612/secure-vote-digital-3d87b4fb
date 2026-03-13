@@ -10,21 +10,31 @@ import { toast } from 'sonner';
 
 const AdminLogin = () => {
   const { t } = useI18n();
-  const { loginAsAdmin } = useAuth();
+  const { adminSignIn } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo only — in production this would use server-side auth
-    if (username === 'admin' && password === 'admin123') {
-      loginAsAdmin();
-      toast.success('Admin login successful');
-      navigate('/admin');
-    } else {
-      toast.error('Invalid credentials. Demo: admin / admin123');
+    if (!username || !password) {
+      toast.error('Enter username and password');
+      return;
     }
+    setLoading(true);
+    try {
+      const result = await adminSignIn(username, password);
+      if (result.status === 'SUCCESS') {
+        toast.success('Admin login successful!');
+        navigate('/admin');
+      } else {
+        toast.error(result.message || 'Invalid credentials');
+      }
+    } catch (e) {
+      toast.error('Could not connect to server. Make sure backend is running.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -39,17 +49,34 @@ const AdminLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Username</label>
-              <Input value={username} onChange={e => setUsername(e.target.value)} maxLength={50} placeholder="admin" />
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Username
+              </label>
+              <Input
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                maxLength={50}
+                placeholder="admin"
+              />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Password</label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} maxLength={100} placeholder="••••••••" />
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Password
+              </label>
+              <Input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                maxLength={100}
+                placeholder="••••••••"
+              />
             </div>
-            <Button type="submit" className="w-full">
-              {t.login} <ArrowRight className="ml-2 h-4 w-4" />
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Logging in...' : <>{t.login} <ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
-            <p className="text-center text-xs text-muted-foreground">Demo: admin / admin123</p>
+            <p className="text-center text-xs text-muted-foreground">
+              Credentials: admin / Admin@123
+            </p>
           </form>
         </CardContent>
       </Card>
