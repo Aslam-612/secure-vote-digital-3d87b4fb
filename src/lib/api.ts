@@ -31,12 +31,10 @@ const apiCall = async (
 };
 
 // AUTH
-export const checkMobile = (mobile: string) =>
-  apiCall(`/auth/check/${mobile}`);
-export const sendOtp = (mobile: string) =>
-  apiCall("/auth/send-otp", "POST", { mobile });
-export const verifyOtp = (mobile: string, otp: string) =>
-  apiCall("/auth/verify-otp", "POST", { mobile, otp });
+export const sendOtp = (aadhar: string) =>
+  apiCall("/auth/send-otp", "POST", { aadhar });
+export const verifyOtp = (aadhar: string, otp: string) =>
+  apiCall("/auth/verify-otp", "POST", { aadhar, otp });
 
 // VOTING
 export const getElections = () =>
@@ -73,3 +71,22 @@ export const deleteCandidate = (id: number, token: string) =>
   apiCall(`/admin/candidates/${id}`, "DELETE", null, token);
 export const getResults = (electionId: number, token: string) =>
   apiCall(`/admin/results/${electionId}`, "GET", null, token);
+
+// CSV Upload
+export const uploadVotersCsv = async (file: File, token: string) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const cleanToken = token.replace("Bearer ", "").trim();
+  const response = await fetch(`${BASE_URL}/admin/voters/upload-csv`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${cleanToken}` },
+    body: formData,
+  });
+  return response.json();
+};
+
+export const updateCandidate = (id: number, candidate: any, token: string) =>
+  apiCall(`/admin/candidates/${id}`, "PUT", candidate, token);
+
+export const updateElection = (id: number, election: any, token: string) =>
+  apiCall(`/admin/elections/${id}`, "PUT", election, token);

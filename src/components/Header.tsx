@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Shield, Phone, Globe, Menu, X, User, LogOut, Settings } from 'lucide-react';
 
 const Header = () => {
-  const { t, toggleLang, lang } = useI18n();
-  const { isAuthenticated, role, logout, name } = useAuth();
+  const { t, toggleLang } = useI18n();
+  const { user, isAdmin, logout } = useAuth();
+  const isAuthenticated = !!user;
+  const role = isAdmin ? 'admin' : 'voter';
+  const name = user?.name || '';
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -55,16 +58,21 @@ const Header = () => {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map(item => (
-            <Link key={item.path} to={item.path} className="rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-primary-foreground/10">
+            <RouterNavLink key={item.path} to={item.path}
+              className={({ isActive }) =>
+                `rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-primary-foreground/10 ${isActive ? 'bg-secondary text-secondary-foreground' : ''}`
+              }>
               {item.label}
-            </Link>
+            </RouterNavLink>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <span className="hidden text-xs md:inline"><User className="mr-1 inline h-3 w-3" />{name}</span>
+              <span className="hidden text-xs md:inline">
+                <User className="mr-1 inline h-3 w-3" />{name}
+              </span>
               {role === 'admin' && (
                 <Button variant="ghost" size="sm" className="text-xs text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate('/admin')}>
                   <Settings className="mr-1 h-3 w-3" />{t.dashboard}
@@ -95,9 +103,12 @@ const Header = () => {
         <div className="border-t border-primary-foreground/10 bg-primary p-4 lg:hidden">
           <nav className="flex flex-col gap-1">
             {navItems.map(item => (
-              <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 text-sm transition-colors hover:bg-primary-foreground/10">
+              <RouterNavLink key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-2 text-sm transition-colors hover:bg-primary-foreground/10 ${isActive ? 'bg-secondary text-secondary-foreground' : ''}`
+                }>
                 {item.label}
-              </Link>
+              </RouterNavLink>
             ))}
             {!isAuthenticated && (
               <>

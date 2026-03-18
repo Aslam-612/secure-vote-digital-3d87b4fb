@@ -11,10 +11,10 @@ const AccessibilityBar = () => {
   const sizeLabels = ['A-', 'A', 'A+', 'A++'];
 
   const changeFontSize = (idx: number) => {
-    setFontSize(idx);
-    document.body.className = document.body.className.replace(/font-size-\w+/g, '');
-    document.body.classList.add(sizes[idx]);
-  };
+  setFontSize(idx);
+  document.body.classList.remove('font-size-sm', 'font-size-md', 'font-size-lg', 'font-size-xl');
+  document.body.classList.add(sizes[idx]);
+};
 
   const toggleContrast = () => {
     setHighContrast(!highContrast);

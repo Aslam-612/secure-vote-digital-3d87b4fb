@@ -108,8 +108,9 @@
   body.font-tamil {
     font-family: 'Noto Sans Tamil', 'Inter', sans-serif;
   }
-  .font-size-sm body, body.font-size-sm { font-size: 14px; }
-  .font-size-md body, body.font-size-md { font-size: 16px; }
-  .font-size-lg body, body.font-size-lg { font-size: 18px; }
-  .font-size-xl body, body.font-size-xl { font-size: 20px; }
+body.font-size-sm { font-size: 14px !important; }
+body.font-size-md { font-size: 16px !important; }
+body.font-size-lg { font-size: 18px !important; }
+body.font-size-xl { font-size: 20px !important; }
+
 }

@@ -1,234 +1,124 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Shield, Phone, ArrowRight, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { z } from 'zod';
-
-const mobileSchema = z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number');
-const voterIdSchema = z.string().min(3, 'Enter a valid ID').max(50);
-const nameSchema = z.string().trim().min(2, 'Name is required').max(100);
+import { Shield, Phone } from 'lucide-react';
 
 const VoterLogin = () => {
-  const { t } = useI18n();
-  const { requestOtp, loginWithOtp } = useAuth();
   const navigate = useNavigate();
+  const { loginWithOtp, requestOtp } = useAuth();
 
-  const [step, setStep] = useState<'register' | 'otp'>('register');
-  const [mobile, setMobile] = useState('');
-  const [voterId, setVoterId] = useState('');
-  const [name, setName] = useState('');
-  const [dob, setDob] = useState('');
+  const [aadhar, setAadhar] = useState('');
   const [otp, setOtp] = useState('');
-  const [timer, setTimer] = useState(300);
-  const [attempts, setAttempts] = useState(3);
-  const [resendCount, setResendCount] = useState(0);
+  const [step, setStep] = useState<'aadhar' | 'otp'>('aadhar');
   const [loading, setLoading] = useState(false);
-
-  const startTimer = useCallback(() => {
-    setTimer(300);
-  }, []);
-
-  useEffect(() => {
-    if (step !== 'otp' || timer <= 0) return;
-    const interval = setInterval(() => setTimer(t => t - 1), 1000);
-    return () => clearInterval(interval);
-  }, [step, timer]);
+  const [maskedMobile, setMaskedMobile] = useState('');
 
   const handleSendOtp = async () => {
-    try {
-      mobileSchema.parse(mobile);
-      voterIdSchema.parse(voterId);
-      nameSchema.parse(name);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        toast.error(err.errors[0].message);
-        return;
-      }
+    if (aadhar.length !== 12) {
+      toast.error('Please enter a valid 12-digit Aadhar number');
+      return;
     }
-
     setLoading(true);
     try {
-      const result = await requestOtp(mobile);
+      const result = await requestOtp(aadhar);
       if (result.status === 'SUCCESS') {
+        setMaskedMobile(result.mobile || '');
         setStep('otp');
-        startTimer();
-        toast.success('OTP sent to your mobile number!');
+        toast.success('OTP sent to your registered mobile number!');
       } else {
-        toast.error(result.message || 'Mobile number not registered.');
+        toast.error(result.message || 'Aadhar not registered. Contact admin.');
       }
     } catch (e) {
-      toast.error('Could not connect to server. Make sure backend is running.');
+      toast.error('Backend is not running or unreachable.');
     }
     setLoading(false);
   };
 
   const handleVerifyOtp = async () => {
-    if (timer <= 0) {
-      toast.error('OTP has expired. Please resend.');
+    if (otp.length !== 6) {
+      toast.error('Please enter the 6-digit OTP');
       return;
     }
-
     setLoading(true);
     try {
-      const result = await loginWithOtp(mobile, otp);
+      const result = await loginWithOtp(aadhar, otp);
       if (result.status === 'SUCCESS') {
-        toast.success(`Welcome ${result.voterName}!`);
+        toast.success(`Welcome, ${result.voterName}!`);
         navigate('/vote');
       } else {
-        const remaining = attempts - 1;
-        setAttempts(remaining);
-        if (remaining <= 0) {
-          toast.error('Maximum attempts exceeded. Please try again.');
-          setStep('register');
-          setAttempts(3);
-        } else {
-          toast.error(`Invalid OTP. ${remaining} attempts left.`);
-        }
+        toast.error(result.message || 'Invalid OTP');
       }
     } catch (e) {
-      toast.error('Could not connect to server.');
+      toast.error('Verification failed. Try again.');
     }
     setLoading(false);
   };
-
-  const handleResendOtp = async () => {
-    if (resendCount >= 3) {
-      toast.error('Maximum resend limit reached.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const result = await requestOtp(mobile);
-      if (result.status === 'SUCCESS') {
-        setResendCount(r => r + 1);
-        setAttempts(3);
-        startTimer();
-        toast.success('OTP resent successfully!');
-      } else {
-        toast.error(result.message || 'Could not resend OTP.');
-      }
-    } catch (e) {
-      toast.error('Could not connect to server.');
-    }
-    setLoading(false);
-  };
-
-  const formatTime = (s: number) =>
-    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center bg-muted/30 px-4 py-16">
-      <Card className="w-full max-w-md border-none shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
-            <Shield className="h-7 w-7 text-secondary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-2">
+            <Shield className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl">
-            {step === 'register' ? t.login : t.enterOtp}
-          </CardTitle>
+          <CardTitle className="text-2xl">Voter Login</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            {step === 'aadhar'
+              ? 'Enter your Aadhar number to receive OTP'
+              : `OTP sent to ${maskedMobile}`}
+          </p>
         </CardHeader>
-        <CardContent>
-          {step === 'register' ? (
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  {t.mobileNumber}
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    className="pl-10"
-                    placeholder="9876543210"
-                    value={mobile}
-                    onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  {t.voterIdLabel}
-                </label>
+        <CardContent className="space-y-4">
+          {step === 'aadhar' ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Aadhar Number</label>
                 <Input
-                  placeholder="CSE2025001"
-                  value={voterId}
-                  onChange={e => setVoterId(e.target.value.slice(0, 50))}
-                  maxLength={50}
+                  placeholder="Enter 12-digit Aadhar number"
+                  value={aadhar}
+                  onChange={e => setAadhar(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                  maxLength={12}
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  {t.fullName}
-                </label>
-                <Input
-                  placeholder="Full Name"
-                  value={name}
-                  onChange={e => setName(e.target.value.slice(0, 100))}
-                  maxLength={100}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  {t.dateOfBirth}
-                </label>
-                <Input
-                  type="date"
-                  value={dob}
-                  onChange={e => setDob(e.target.value)}
-                />
+                <p className="text-xs text-muted-foreground">
+                  {aadhar.length}/12 digits
+                </p>
               </div>
               <Button
-                className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                onClick={handleSendOtp}
-                disabled={loading}
-              >
-                {loading ? t.loading : <>{t.sendOtp} <ArrowRight className="ml-2 h-4 w-4" /></>}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <p className="text-center text-sm text-muted-foreground">{t.otpSent}</p>
-              <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                  <InputOTPGroup>
-                    {[0,1,2,3,4,5].map(i => (
-                      <InputOTPSlot key={i} index={i} />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-              <div className="text-center text-sm">
-                {timer > 0 ? (
-                  <span className="text-muted-foreground">
-                    {t.otpExpiry}: <span className="font-mono font-bold text-foreground">{formatTime(timer)}</span>
-                  </span>
-                ) : (
-                  <span className="text-destructive">OTP Expired</span>
-                )}
-              </div>
-              <Button
-                className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                onClick={handleVerifyOtp}
-                disabled={loading}
-              >
-                {loading ? t.loading : t.verifyOtp}
-              </Button>
-              <Button
-                variant="ghost"
                 className="w-full"
-                onClick={handleResendOtp}
-                disabled={resendCount >= 3 || loading}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t.resendOtp} ({3 - resendCount} left)
+                onClick={handleSendOtp}
+                disabled={loading || aadhar.length !== 12}>
+                {loading ? 'Sending OTP...' : 'Send OTP'}
               </Button>
-            </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Enter OTP</label>
+                <Input
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleVerifyOtp}
+                disabled={loading || otp.length !== 6}>
+                {loading ? 'Verifying...' : 'Verify OTP & Login'}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setStep('aadhar'); setOtp(''); }}
+                disabled={loading}>
+                ← Change Aadhar
+              </Button>
+            </>
           )}
         </CardContent>
       </Card>

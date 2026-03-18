@@ -12,8 +12,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAdmin: boolean;
-  requestOtp: (mobile: string) => Promise<any>;
-  loginWithOtp: (mobile: string, otp: string) => Promise<any>;
+  requestOtp: (aadhar: string) => Promise<any>;
+  loginWithOtp: (aadhar: string, otp: string) => Promise<any>;
   adminSignIn: (username: string, password: string) => Promise<any>;
   logout: () => void;
 }
@@ -31,18 +31,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.getItem("evoting_role") === "ADMIN"
   );
 
-  const requestOtp = async (mobile: string) => {
-    const result = await sendOtp(mobile);
+  const requestOtp = async (aadhar: string) => {
+    const result = await sendOtp(aadhar);
     return result;
   };
 
-  const loginWithOtp = async (mobile: string, otp: string) => {
-    const result = await verifyOtp(mobile, otp);
+  const loginWithOtp = async (aadhar: string, otp: string) => {
+    const result = await verifyOtp(aadhar, otp);
     if (result.status === "SUCCESS") {
       setToken(result.token);
       setUser({
         name: result.voterName,
-        mobile,
         hasVoted: result.hasVoted,
       });
       setIsAdmin(false);
@@ -50,11 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("evoting_role", "VOTER");
       localStorage.setItem(
         "evoting_user",
-        JSON.stringify({
-          name: result.voterName,
-          mobile,
-          hasVoted: result.hasVoted,
-        })
+        JSON.stringify({ name: result.voterName, hasVoted: result.hasVoted })
       );
     }
     return result;
@@ -87,16 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAdmin,
-        requestOtp,
-        loginWithOtp,
-        adminSignIn,
-        logout,
-      }}
-    >
+      value={{ user, token, isAdmin, requestOtp, loginWithOtp, adminSignIn, logout }}>
       {children}
     </AuthContext.Provider>
   );
