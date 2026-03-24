@@ -3,7 +3,7 @@ import { Link, NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Shield, Phone, Globe, Menu, X, User, LogOut, Settings } from 'lucide-react';
+import { Phone, Globe, Menu, X, User, LogOut, Settings } from 'lucide-react';
 
 const Header = () => {
   const { t, toggleLang } = useI18n();
@@ -46,12 +46,12 @@ const Header = () => {
       {/* Main header */}
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-            <Shield className="h-6 w-6 text-secondary-foreground" />
-          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden bg-white">
+  <img src="/Logo.png" alt="eVoting Logo" className="h-10 w-10 object-contain" />
+</div>
           <div>
             <h1 className="text-sm font-bold leading-tight md:text-base">{t.portalTitle}</h1>
-            <p className="text-[10px] opacity-70">eVoting Portal</p>
+            <p className="text-[10px] opacity-70">Vote Secure. Vote Smart.!</p>
           </div>
         </Link>
 

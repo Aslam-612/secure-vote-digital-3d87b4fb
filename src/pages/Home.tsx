@@ -24,19 +24,21 @@ const Home = () => {
   ]);
 
   useEffect(() => {
-    getElections().then((data: any[]) => {
-      if (!Array.isArray(data)) return;
-      const active = data.filter((e: any) => e.status === 'ACTIVE');
-      setActiveElections(active);
-      setStats([
-        { icon: Users, value: '-', label: 'Registered Voters' },
-        { icon: Vote, value: '-', label: 'Votes Cast Today' },
-        { icon: BarChart3, value: String(active.length), label: 'Active Elections' },
-        { icon: Lock, value: '100%', label: 'Encrypted Votes' },
-      ]);
-    }).catch(() => {});
-  }, []);
-
+  Promise.all([
+    getElections(),
+    fetch('http://localhost:8080/api/public/stats').then(r => r.json())
+  ]).then(([electionsData, statsData]: [any[], any]) => {
+    if (!Array.isArray(electionsData)) return;
+    const active = electionsData.filter((e: any) => e.status === 'ACTIVE');
+    setActiveElections(active);
+    setStats([
+      { icon: Users,    value: String(statsData.totalVoters ?? 0), label: 'Registered Voters' },
+      { icon: Vote,     value: String(statsData.votesCast ?? 0),   label: 'Votes Cast Today' },
+      { icon: BarChart3,value: String(active.length),              label: 'Active Elections' },
+      { icon: Lock,     value: '100%',                             label: 'Encrypted Votes' },
+    ]);
+  }).catch(() => {});
+}, []);
   return (
     <div>
       {/* Hero */}
@@ -55,7 +57,7 @@ const Home = () => {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button asChild size="lg" variant="secondary" className="text-base font-semibold">
-              <Link to="/login">Get Started</Link>
+              <Link to="/login">Cast your Vote</Link>
             </Button>
             <Button asChild size="lg" className="text-base bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary">
   <Link to="/elections">View Elections</Link>

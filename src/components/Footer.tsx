@@ -54,6 +54,12 @@ const Footer = () => {
           {t.copyright}
         </div>
       </div>
+      {/* Indian Tricolor stripe */}
+<div className="flex h-1.5 w-full">
+  <div className="flex-1 bg-[#FF9933]" /> {/* Saffron */}
+  <div className="flex-1 bg-white" />     {/* White */}
+  <div className="flex-1 bg-[#138808]" /> {/* Green */}
+</div>
     </footer>
   );
 };

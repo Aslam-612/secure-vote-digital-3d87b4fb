@@ -20,6 +20,8 @@ import AdminLogin from "./pages/AdminLogin";
 import VotingPage from "./pages/VotingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SecurityPolicy from "./pages/SecurityPolicy";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,8 @@ const App = () => (
               <Route path="/vote" element={<Layout><VotingPage /></Layout>} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<Layout><NotFound /></Layout>} />
+              <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+<Route path="/security-policy" element={<Layout><SecurityPolicy /></Layout>} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
