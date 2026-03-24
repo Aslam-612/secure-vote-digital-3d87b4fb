@@ -14,16 +14,7 @@ import { toast } from 'sonner';
 import { getDashboard, getVoters, getAdminElections, getAdminCandidates, uploadVotersCsv, addCandidate, updateCandidate, deleteCandidate, addElection, updateElection, deleteElection } from '@/lib/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-const STATE_EMBLEMS: Record<string, string> = {
-  'Tamil Nadu': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Seal_of_Tamil_Nadu.jpg',
-  'Kerala': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/500px-Government_of_Kerala_Logo_black.jpg',
-  'Andhra Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Emblem_of_Andhra_Pradesh.svg.png',
-  'Karnataka': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/500px-Seal_of_Karnataka.svg.png',
-  'Uttar Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Seal_of_Uttar_Pradesh.svg.png',
-  'Madhya Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Emblem_of_Madhya_Pradesh.svg.png',
-  'Rajasthan': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/250px-Emblem_Rajasthan.png',
-};
+import { STATE_EMBLEMS } from '@/lib/stateEmblems';
 
 const CHART_COLORS = ['hsl(168, 100%, 39%)', 'hsl(224, 71%, 17%)', 'hsl(40, 95%, 55%)', 'hsl(0, 84%, 60%)', 'hsl(210, 100%, 52%)'];
 
@@ -37,7 +28,7 @@ const INDIAN_STATES = [
   'Ladakh','Lakshadweep','Puducherry'
 ];
 
-const emptyCandidate = { name: '', age: '', gender: '', groupName: '', constituency: '', position: '', phone: '', description: '', electionId: '', photo: '' };
+const emptyCandidate = { name: '', age: '', gender: '', groupName: '', constituency: '', position: '', phone: '', description: '', electionId: '', photo: '', dateOfBirth: '' };
 const emptyElection = { title: '', type: '', parties: '', startTime: '', endTime: '', status: 'UPCOMING', state: '' };
 type PartyEntry = { name: string; logo: string };
 
@@ -458,11 +449,12 @@ console.log('Parties size (bytes):', partiesJson.length);
   const openEditCandidateModal = (c: any) => {
     setEditingCandidate(c);
     setCandidateForm({
-      name: c.name || '', age: c.age || '', gender: c.gender || '',
-      groupName: c.groupName || '', constituency: c.constituency || '',
-      position: c.position || '', phone: c.phone || '',
-      description: c.description || '', electionId: c.electionId || '', photo: c.photo || ''
-    });
+  name: c.name || '', age: c.age || '', gender: c.gender || '',
+  groupName: c.groupName || '', constituency: c.constituency || '',
+  position: c.position || '', phone: c.phone || '',
+  description: c.description || '', electionId: c.electionId || '', 
+  photo: c.photo || '', dateOfBirth: c.dateOfBirth || ''
+});
     const el = elections.find((e: any) => e.id === c.electionId);
     if (el) {
       const govData = getElectionGovData(el);
@@ -510,8 +502,8 @@ console.log('Parties size (bytes):', partiesJson.length);
   const validateCandidateForm = () => {
     const errors: any = {};
     if (!candidateForm.name.trim()) errors.name = 'Full name is required';
-    if (!candidateForm.age || isNaN(candidateForm.age) || candidateForm.age < 18 || candidateForm.age > 100)
-      errors.age = 'Valid age (18-100) is required';
+    if (!candidateForm.age || isNaN(candidateForm.age) || candidateForm.age < 25 || candidateForm.age > 100)
+  errors.age = 'Candidate must be at least 25 years old';
     if (!candidateForm.gender) errors.gender = 'Gender is required';
     if (!candidateForm.groupName) errors.groupName = 'Party is required';
     if (!candidateForm.position.trim()) errors.position = 'Position is required';
@@ -724,6 +716,19 @@ onChange={e => {
                     </select>
                     {electionErrors.state && <p className="text-xs text-red-500 mt-1">{electionErrors.state}</p>}
                   </div>
+                  {electionErrors.state && <p className="text-xs text-red-500 mt-1">{electionErrors.state}</p>}
+
+{/* ADD THIS BLOCK ↓ */}
+{electionForm.state && STATE_EMBLEMS[electionForm.state] && (
+  <div className="mt-2 flex items-center gap-3 p-2 bg-background rounded-lg border w-fit">
+    <img
+      src={STATE_EMBLEMS[electionForm.state]}
+      alt={electionForm.state}
+      className="h-10 w-10 object-contain rounded-full border"
+    />
+    <span className="text-sm font-medium text-foreground">{electionForm.state}</span>
+  </div>
+)}
                   {electionForm.state && (
                     <div>
                       <label className="text-sm font-medium">Add Cities in {electionForm.state}</label>
@@ -923,12 +928,25 @@ onChange={e => {
                     {candidateErrors.name && <p className="text-xs text-red-500 mt-1">{candidateErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Age *</label>
-                    <Input type="number" placeholder="Age" value={candidateForm.age}
-                      onChange={e => setCandidateForm({ ...candidateForm, age: e.target.value })}
-                      className={candidateErrors.age ? 'border-red-500' : ''} />
-                    {candidateErrors.age && <p className="text-xs text-red-500 mt-1">{candidateErrors.age}</p>}
-                  </div>
+  <label className="text-sm font-medium">Date of Birth *</label>
+  <Input type="date" 
+    max={new Date(new Date().setFullYear(new Date().getFullYear() - 25)).toISOString().split('T')[0]}
+    value={candidateForm.dateOfBirth || ''}
+    onChange={e => {
+      const dob = e.target.value;
+      if (!dob) { setCandidateForm({ ...candidateForm, dateOfBirth: '', age: '' }); return; }
+      const age = Math.floor((new Date().getTime() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      setCandidateForm({ ...candidateForm, dateOfBirth: dob, age: String(age) });
+    }}
+    className={candidateErrors.age ? 'border-red-500' : ''} />
+  {candidateForm.dateOfBirth && (
+    <p className="text-xs text-muted-foreground mt-1">
+      Age: {candidateForm.age} years
+      {Number(candidateForm.age) < 25 && <span className="text-red-500 ml-1">— must be 25+</span>}
+    </p>
+  )}
+  {candidateErrors.age && <p className="text-xs text-red-500 mt-1">{candidateErrors.age}</p>}
+</div>
                   <div>
                     <label className="text-sm font-medium">Gender *</label>
                     <select className={`w-full border rounded-md px-3 py-2 text-sm bg-background ${candidateErrors.gender ? 'border-red-500' : 'border-input'}`}

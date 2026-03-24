@@ -8,16 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { CheckCircle2, AlertTriangle, MapPin, Building, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { getElections, getCandidates, castVote } from '@/lib/api';
-
-const STATE_EMBLEMS: Record<string, string> = {
-  'Tamil Nadu': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Seal_of_Tamil_Nadu.jpg',
-  'Kerala': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/500px-Government_of_Kerala_Logo_black.jpg',
-  'Andhra Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Emblem_of_Andhra_Pradesh.svg.png',
-  'Karnataka': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/500px-Seal_of_Karnataka.svg.png',
-  'Uttar Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Seal_of_Uttar_Pradesh.svg.png',
-  'Madhya Pradesh': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/Emblem_of_Madhya_Pradesh.svg.png',
-  'Rajasthan': 'https://raw.githubusercontent.com/Aslam-612/secure-vote-digital-3d87b4fb/main/public/state-emblems/250px-Emblem_Rajasthan.png',
-};
+import { STATE_EMBLEMS } from '@/lib/stateEmblems';
 
 const VotingPage = () => {
   const { t } = useI18n();
@@ -134,6 +125,11 @@ const VotingPage = () => {
     try { return JSON.parse(election?.description || '{}').state || ''; } catch { return ''; }
   };
 
+  const getElectionStateEmblem = (election: any) => {
+    const state = getElectionState(election);
+    return state ? STATE_EMBLEMS[state] || '' : '';
+  };
+
   // Get candidate city from election data
   const getCandidateCity = (election: any, constituency: string) => {
     try {
@@ -169,20 +165,29 @@ const VotingPage = () => {
     <div className="container px-4 py-12">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold text-foreground">{t.castVote}</h1>
-          {selectedElection && (
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-lg text-muted-foreground">{selectedElection.title}</p>
-              {getElectionState(selectedElection) && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3" /> {getElectionState(selectedElection)}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
+<div className="mb-8 text-center">
+  
+  <h1 className="mb-2 text-3xl font-bold text-foreground">{t.castVote}</h1>
+  {selectedElection && getElectionStateEmblem(selectedElection) && (
+    <div className="mb-3 flex justify-center">
+      <img
+        src={getElectionStateEmblem(selectedElection)}
+        alt={`${getElectionState(selectedElection)} emblem`}
+        className="h-16 w-16 rounded-full border bg-card object-contain p-1 shadow-sm"
+      />
+    </div>
+  )}
+  {selectedElection && (
+    <div className="flex flex-col items-center gap-1">
+      <p className="text-lg text-muted-foreground">{selectedElection.title}</p>
+      {getElectionState(selectedElection) && (
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3" /> {getElectionState(selectedElection)}
+        </span>
+      )}
+    </div>
+  )}
+</div>
         {/* Election selector */}
         {elections.length > 1 && (
           <div className="mb-6 flex flex-wrap justify-center gap-2">
