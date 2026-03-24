@@ -171,10 +171,13 @@ const VotingPage = () => {
   {selectedElection && getElectionStateEmblem(selectedElection) && (
     <div className="mb-3 flex justify-center">
       <img
-        src={getElectionStateEmblem(selectedElection)}
-        alt={`${getElectionState(selectedElection)} emblem`}
-        className="h-16 w-16 rounded-full border bg-card object-contain p-1 shadow-sm"
-      />
+  src={getElectionStateEmblem(selectedElection)}
+  onError={(e) => {
+    e.currentTarget.src = "/state-emblems/default.png";
+  }}
+  alt={`${getElectionState(selectedElection)} emblem`}
+  className="h-16 w-16 rounded-full border bg-card object-contain p-1 shadow-sm"
+/>
     </div>
   )}
   {selectedElection && (

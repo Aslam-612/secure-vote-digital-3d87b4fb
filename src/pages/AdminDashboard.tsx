@@ -28,6 +28,18 @@ const INDIAN_STATES = [
   'Ladakh','Lakshadweep','Puducherry'
 ];
 
+const calculateAge = (dob: string) => {
+  if (!dob) return '-';
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const emptyCandidate = { name: '', age: '', gender: '', groupName: '', constituency: '', position: '', phone: '', description: '', electionId: '', photo: '', dateOfBirth: '' };
 const emptyElection = { title: '', type: '', parties: '', startTime: '', endTime: '', status: 'UPCOMING', state: '' };
 type PartyEntry = { name: string; logo: string };
@@ -185,6 +197,8 @@ const applyFilterFull = async (state: string, city: string, constituency: string
                       <TableHeader>
                         <TableRow className="bg-muted/50">
                           <TableHead>Name</TableHead>
+                          <TableHead>Age</TableHead>
+                          <TableHead>D.O.B</TableHead>
                           <TableHead>Mobile</TableHead>
                           <TableHead>Aadhar</TableHead>
                           <TableHead>State</TableHead>
@@ -198,19 +212,39 @@ const applyFilterFull = async (state: string, city: string, constituency: string
   {cityVoters.map((v: any) => (
     <TableRow key={v.id}>
       <TableCell className="font-medium">{v.name}</TableCell>
-      <TableCell className="font-mono text-sm">{v.mobile}</TableCell>
-      <TableCell className="font-mono text-sm">{v.aadharNumber || '-'}</TableCell>
-      <TableCell className="text-sm">{v.state || '-'}</TableCell>
-      <TableCell className="text-sm">{v.city || '-'}</TableCell>
-      <TableCell className="text-sm">{v.constituency || '-'}</TableCell>
-      <TableCell>
-        {v.hasVoted
-          ? <Badge className="bg-secondary text-secondary-foreground">Yes</Badge>
-          : <Badge variant="outline">No</Badge>}
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {new Date(v.registeredAt).toLocaleDateString()}
-      </TableCell>
+
+{/* Age */}
+<TableCell>{calculateAge(v.dateOfBirth)}</TableCell>
+
+{/* DOB */}
+<TableCell>{v.dateOfBirth || '-'}</TableCell>
+
+{/* Mobile */}
+<TableCell className="font-mono text-sm">{v.mobile}</TableCell>
+
+{/* Aadhar */}
+<TableCell className="font-mono text-sm">{v.aadharNumber || '-'}</TableCell>
+
+{/* State */}
+<TableCell className="text-sm">{v.state || '-'}</TableCell>
+
+{/* City */}
+<TableCell className="text-sm">{v.city || '-'}</TableCell>
+
+{/* Constituency */}
+<TableCell className="text-sm">{v.constituency || '-'}</TableCell>
+
+{/* Voted */}
+<TableCell>
+  {v.hasVoted
+    ? <Badge className="bg-secondary text-secondary-foreground">Yes</Badge>
+    : <Badge variant="outline">No</Badge>}
+</TableCell>
+
+{/* Registered */}
+<TableCell className="text-sm text-muted-foreground">
+  {new Date(v.registeredAt).toLocaleDateString()}
+</TableCell>
     </TableRow>
   ))}
 </TableBody>
@@ -929,15 +963,36 @@ onChange={e => {
                   </div>
                   <div>
   <label className="text-sm font-medium">Date of Birth *</label>
-  <Input type="date" 
-    max={new Date(new Date().setFullYear(new Date().getFullYear() - 25)).toISOString().split('T')[0]}
-    value={candidateForm.dateOfBirth || ''}
-    onChange={e => {
-      const dob = e.target.value;
-      if (!dob) { setCandidateForm({ ...candidateForm, dateOfBirth: '', age: '' }); return; }
-      const age = Math.floor((new Date().getTime() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      setCandidateForm({ ...candidateForm, dateOfBirth: dob, age: String(age) });
-    }}
+  <Input
+  type="date"
+  max={new Date(new Date().getFullYear() - 25, 11, 31)
+    .toISOString()
+    .split("T")[0]}
+  value={candidateForm.dateOfBirth || ''}
+  onChange={e => {
+    const dob = e.target.value;
+
+    if (!dob) {
+      setCandidateForm({ ...candidateForm, dateOfBirth: '', age: '' });
+      return;
+    }
+
+    const birth = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+
+    setCandidateForm({
+      ...candidateForm,
+      dateOfBirth: dob,
+      age: String(age)
+    });
+  }}
     className={candidateErrors.age ? 'border-red-500' : ''} />
   {candidateForm.dateOfBirth && (
     <p className="text-xs text-muted-foreground mt-1">
@@ -1174,14 +1229,26 @@ onChange={e => {
                 <CardHeader><CardTitle className="text-base">Vote Share — {dashboardElection?.title || 'No Elections'}</CardTitle></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                        {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+  <PieChart>
+    <Pie
+      data={pieData}
+      cx="50%"
+      cy="50%"
+      outerRadius={80}
+      dataKey="value"
+      label={({ name, percent, value }) => {
+        if (value === 0) return null;
+        return `${name} (${(percent * 100).toFixed(0)}%)`;
+      }}
+      labelLine={false}
+    >
+      {pieData.map((_, i) => (
+        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+      ))}
+    </Pie>
+    <Tooltip />
+  </PieChart>
+</ResponsiveContainer>
                 </CardContent>
               </Card>
             </div>
