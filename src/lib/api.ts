@@ -90,3 +90,15 @@ export const updateCandidate = (id: number, candidate: any, token: string) =>
 
 export const updateElection = (id: number, election: any, token: string) =>
   apiCall(`/admin/elections/${id}`, "PUT", election, token);
+
+export const getVoterStates = (token: string) =>
+  apiCall("/admin/voters/states", "GET", null, token);
+export const getVoterCities = (token: string, state?: string) =>
+  apiCall(`/admin/voters/cities${state ? `?state=${encodeURIComponent(state)}` : ''}`, "GET", null, token);
+export const filterVoters = (token: string, state?: string, city?: string) => {
+  const params = new URLSearchParams();
+  if (state) params.append('state', state);
+  if (city) params.append('city', city);
+  const query = params.toString();
+  return apiCall(`/admin/voters/filter${query ? `?${query}` : ''}`, "GET", null, token);
+};
